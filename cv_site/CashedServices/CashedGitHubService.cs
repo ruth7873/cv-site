@@ -13,50 +13,18 @@ namespace cv_site.CashedServices
             _gitHubService = gitHubService;
             _memoeyCache = memoryCache;
         }
-        //public async Task<List<RepositoryInfo>> GetPortfolioAsync(string userName)
-        //{
-        //    if (_memoeyCache.TryGetValue(UserPortfolioKey, out List<RepositoryInfo> portfolio))
-        //        return portfolio;
-
-        //    // Create cache options
-        //    var cacheOptions = new MemoryCacheEntryOptions()
-        //        .SetAbsoluteExpiration(TimeSpan.FromSeconds(30))
-        //        .SetSlidingExpiration(TimeSpan.FromSeconds(10));
-
-        //    portfolio = await _gitHubService.GetPortfolioAsync(userName);
-        //    _memoeyCache.Set(UserPortfolioKey, portfolio, cacheOptions);
-        //    return portfolio;
-        //}
         public async Task<List<RepositoryInfo>> GetPortfolioAsync(string userName)
         {
-            // בדוק אם יש מידע ב-cache
-            if (_memoeyCache.TryGetValue(UserPortfolioKey, out (List<RepositoryInfo> portfolio, DateTimeOffset lastUpdated) cachedData))
-            {
-                // קבל את המידע על ה-repositories
-                var newPortfolio = await _gitHubService.GetPortfolioAsync(userName);
+            if (_memoeyCache.TryGetValue(UserPortfolioKey, out List<RepositoryInfo> portfolio))
+                return portfolio;
 
-                // בדוק אם התבצעה עדכון על ידי השוואת LastCommit
-                if (newPortfolio.Any(repo => repo.LastCommit > cachedData.lastUpdated))
-                {
-                    // אם התבצעה עדכון, נקה את ה-cache
-                    _memoeyCache.Remove(UserPortfolioKey);
-                }
-                else
-                {
-                    // אם לא, החזר את המידע מה-cache
-                    return cachedData.portfolio;
-                }
-            }
-
-            // קבל את המידע מחדש אם ה-cache ריק או אם התבצעה עדכון
-            var portfolio = await _gitHubService.GetPortfolioAsync(userName);
-
-            // שמור את המידע ב-cache עם הזמן הנוכחי
+            // Create cache options
             var cacheOptions = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromSeconds(30))
                 .SetSlidingExpiration(TimeSpan.FromSeconds(10));
 
-            _memoeyCache.Set(UserPortfolioKey, (portfolio, DateTimeOffset.UtcNow), cacheOptions);
+            portfolio = await _gitHubService.GetPortfolioAsync(userName);
+            _memoeyCache.Set(UserPortfolioKey, portfolio, cacheOptions);
             return portfolio;
         }
 
