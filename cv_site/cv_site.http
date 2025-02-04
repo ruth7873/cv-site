@@ -1,0 +1,6 @@
+@cv_site_HostAddress = http://localhost:5117
+
+GET {{cv_site_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
